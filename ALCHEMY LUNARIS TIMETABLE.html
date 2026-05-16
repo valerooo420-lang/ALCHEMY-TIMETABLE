@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Алхимия Lunaris — Расписание</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Raleway:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+
+:root{
+  --bg:#06050f;
+  --surface:rgba(255,255,255,0.04);
+  --surface2:rgba(255,255,255,0.07);
+  --accent:#c4b5fd;
+  --accent2:#7de8d4;
+  --gold:#e8d5a4;
+  --text:#e8e2f5;
+  --muted:rgba(184,164,232,0.45);
+  --border:rgba(184,164,232,0.12);
+  --border2:rgba(184,164,232,0.22);
+}
+
+html,body{
+  height:100%;
+  background:var(--bg);
+  font-family:'Raleway',sans-serif;
+  color:var(--text);
+  overflow:hidden;
+}
+
+#app{
+  display:flex;
+  flex-direction:column;
+  height:100vh;
+  height:100dvh;
+  position:relative;
+  overflow:hidden;
+}
+
+/* Stars */
+#stars{
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  z-index:0;
+  overflow:hidden;
+}
+.star{
+  position:absolute;
+  border-radius:50%;
+  background:#fff;
+  animation:twinkle var(--dur,3s) ease-in-out infinite;
+  animation-delay:var(--del,0s);
+}
+@keyframes twinkle{0%,100%{opacity:var(--op,0.5)}50%{opacity:0.1}}
+
+/* Nebula glow */
+#app::before{
+  content:'';
+  position:fixed;
+  top:-80px;left:50%;
+  transform:translateX(-50%);
+  width:280px;height:280px;
+  background:radial-gradient(ellipse,rgba(124,58,237,0.18) 0%,transparent 70%);
+  pointer-events:none;
+  z-index:0;
+}
+
+.inner{
+  position:relative;
+  z-index:1;
+  display:flex;
+  flex-direction:column;
+  height:100%;
+}
+
+/* HEADER */
+.header{
+  padding:env(safe-area-inset-top,12px) 16px 0;
+  padding-top:max(env(safe-area-inset-top),12px);
+  text-align:center;
+  flex-shrink:0;
+}
+
+.logo-symbol{
+  width:36px;height:36px;
+  margin:0 auto 8px;
+  opacity:0.9;
+}
+
+.fest-title{
+  font-family:'Cinzel',serif;
+  font-size:24px;
+  font-weight:700;
+  letter-spacing:3px;
+  color:#c4b5fd;
+  text-transform:uppercase;
+  line-height:1;
+}
+.fest-subtitle{
+  font-family:'Cinzel',serif;
+  font-size:10px;
+  font-weight:400;
+  letter-spacing:7px;
+  color:var(--accent2);
+  margin-top:3px;
+  text-transform:uppercase;
+}
+.fest-date{
+  font-size:9px;
+  letter-spacing:3px;
+  color:var(--muted);
+  margin-top:5px;
+  text-transform:uppercase;
+}
+
+.moon-divider{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 16px 0;
+}
+.moon-line{flex:1;height:1px;background:linear-gradient(to right,transparent,var(--border2),transparent)}
+.moon-icon{font-size:12px;color:var(--accent);opacity:0.6}
+
+/* CONTROLS */
+.controls{
+  flex-shrink:0;
+  padding:0 16px;
+}
+
+.day-tabs{
+  display:flex;gap:6px;
+  padding-top:10px;
+}
+.day-tab{
+  flex:1;padding:9px 8px;
+  border:1px solid var(--border2);
+  border-radius:8px;
+  background:var(--surface);
+  color:var(--muted);
+  font-family:'Cinzel',serif;
+  font-size:9px;letter-spacing:2px;
+  text-transform:uppercase;
+  cursor:pointer;
+  transition:all 0.25s;
+  text-align:center;
+}
+.day-tab.active{
+  background:rgba(124,58,237,0.2);
+  border-color:rgba(196,181,253,0.4);
+  color:#c4b5fd;
+}
+
+.stages-wrap{
+  padding-top:8px;
+  display:flex;gap:6px;
+  overflow-x:auto;
+  scrollbar-width:none;
+  -webkit-overflow-scrolling:touch;
+}
+.stages-wrap::-webkit-scrollbar{display:none}
+.stage-pill{
+  flex-shrink:0;
+  padding:5px 12px;
+  border-radius:20px;
+  font-size:8px;letter-spacing:2px;
+  text-transform:uppercase;
+  font-weight:500;
+  border:1px solid var(--border2);
+  background:var(--surface);
+  color:var(--muted);
+  cursor:pointer;
+  transition:all 0.2s;
+  white-space:nowrap;
+}
+.stage-pill.active{color:#06050f;border-color:transparent;font-weight:700}
+
+/* NOW BAR */
+.now-bar{
+  margin:8px 16px 0;
+  padding:7px 12px;
+  border-radius:8px;
+  background:rgba(125,232,212,0.06);
+  border:1px solid rgba(125,232,212,0.15);
+  display:flex;align-items:center;gap:8px;
+  flex-shrink:0;
+}
+.now-dot{
+  width:6px;height:6px;border-radius:50%;
+  background:var(--accent2);flex-shrink:0;
+  animation:blink 1.8s ease-in-out infinite;
+}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
+.now-text{font-size:8px;letter-spacing:1.5px;text-transform:uppercase;color:var(--accent2)}
+.now-artist{font-size:9px;color:var(--text);margin-left:auto;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px}
+
+/* SCROLL AREA */
+.scroll-area{
+  flex:1;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+  padding:10px 16px;
+  padding-bottom:calc(env(safe-area-inset-bottom,16px) + 60px);
+}
+.scroll-area::-webkit-scrollbar{display:none}
+
+/* SLOT CARDS */
+.slot-row{display:flex;gap:10px;align-items:flex-start;margin-bottom:6px}
+
+.time-col{
+  width:38px;flex-shrink:0;
+  padding-top:13px;
+  display:flex;flex-direction:column;align-items:center;
+}
+.t-label{font-size:9px;color:var(--muted);letter-spacing:0.5px;white-space:nowrap}
+.t-line{width:1px;flex:1;min-height:14px;background:var(--border);margin-top:3px}
+
+.slot-card{
+  flex:1;
+  border-radius:10px;
+  padding:10px 12px;
+  border:1px solid var(--border);
+  background:var(--surface);
+  position:relative;overflow:hidden;
+  transition:transform 0.15s,background 0.15s;
+  cursor:pointer;
+  -webkit-user-select:none;user-select:none;
+}
+.slot-card::before{
+  content:'';position:absolute;left:0;top:0;bottom:0;width:2px;
+  background:var(--stage-color,#c4b5fd);opacity:0.7;
+}
+.slot-card:active{transform:scale(0.97)}
+.slot-card.is-now{background:rgba(125,232,212,0.07);border-color:rgba(125,232,212,0.25)}
+.slot-card.is-now::before{background:var(--accent2);opacity:1}
+.slot-card.past{opacity:0.38}
+
+.slot-top{display:flex;align-items:flex-start;justify-content:space-between;gap:6px}
+.artist-name{
+  font-family:'Cinzel',serif;
+  font-size:11px;font-weight:600;
+  color:var(--text);line-height:1.3;flex:1;
+}
+.fav-btn{
+  background:none;border:none;cursor:pointer;
+  font-size:16px;padding:0 0 0 4px;
+  color:rgba(196,181,253,0.25);
+  transition:all 0.2s;flex-shrink:0;line-height:1;
+}
+.fav-btn.faved{color:#f59e0b}
+
+.slot-tags{display:flex;align-items:center;gap:5px;margin-top:4px;flex-wrap:wrap}
+.live-badge{
+  font-size:7px;letter-spacing:1.5px;text-transform:uppercase;font-weight:700;
+  padding:2px 6px;border-radius:3px;
+  background:rgba(196,181,253,0.12);color:#c4b5fd;
+  border:1px solid rgba(196,181,253,0.22);
+}
+.now-badge{
+  font-size:7px;letter-spacing:1.5px;text-transform:uppercase;font-weight:700;
+  padding:2px 6px;border-radius:3px;
+  background:rgba(125,232,212,0.12);color:var(--accent2);
+  border:1px solid rgba(125,232,212,0.28);
+}
+
+/* FAVORITES EMPTY */
+.fav-empty{
+  padding:60px 20px;
+  text-align:center;
+  color:var(--muted);
+  font-size:12px;letter-spacing:1px;
+  line-height:1.8;
+}
+.fav-empty-icon{font-size:32px;margin-bottom:12px;display:block}
+
+/* FAV STAGE HEADER */
+.fav-group-label{
+  font-size:8px;letter-spacing:2px;color:var(--muted);
+  text-transform:uppercase;padding:0 0 4px 48px;
+  margin-top:4px;
+}
+
+/* BOTTOM NAV */
+.bottom-nav{
+  position:fixed;
+  bottom:0;left:0;right:0;
+  display:flex;
+  background:rgba(6,5,15,0.96);
+  border-top:1px solid var(--border);
+  -webkit-backdrop-filter:blur(12px);
+  backdrop-filter:blur(12px);
+  z-index:100;
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+.nav-btn{
+  flex:1;padding:11px 4px;
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+  background:none;border:none;cursor:pointer;
+  color:var(--muted);font-size:8px;letter-spacing:1px;
+  text-transform:uppercase;font-family:'Raleway',sans-serif;
+  transition:color 0.2s;
+}
+.nav-btn.active{color:#c4b5fd}
+.nav-icon{font-size:18px;line-height:1}
+</style>
+</head>
+<body>
+
+<div id="stars"></div>
+
+<div id="app">
+<div class="inner">
+
+  <div class="header">
+    <svg class="logo-symbol" viewBox="0 0 120 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="60" cy="58" r="36" stroke="#c4b5fd" stroke-width="4" fill="none"/>
+      <path d="M40 40 Q60 22 80 40" stroke="#c4b5fd" stroke-width="4" fill="none" stroke-linecap="round"/>
+      <ellipse cx="60" cy="56" rx="18" ry="10" stroke="#c4b5fd" stroke-width="3" fill="none"/>
+      <circle cx="60" cy="58" r="7" fill="#a78bfa" opacity="0.75"/>
+      <line x1="60" y1="94" x2="60" y2="114" stroke="#c4b5fd" stroke-width="4" stroke-linecap="round"/>
+      <line x1="36" y1="114" x2="84" y2="114" stroke="#c4b5fd" stroke-width="4" stroke-linecap="round"/>
+      <path d="M36 114 Q36 130 50 130" stroke="#c4b5fd" stroke-width="4" fill="none" stroke-linecap="round"/>
+      <path d="M84 114 Q84 130 70 130" stroke="#c4b5fd" stroke-width="4" fill="none" stroke-linecap="round"/>
+    </svg>
+    <div class="fest-title">Алхимия</div>
+    <div class="fest-subtitle">Lunaris</div>
+    <div class="fest-date">19 — 20 June · Open Air</div>
+  </div>
+
+  <div class="moon-divider">
+    <div class="moon-line"></div>
+    <div class="moon-icon">◯</div>
+    <div class="moon-line"></div>
+  </div>
+
+  <div class="controls">
+    <div class="day-tabs">
+      <button class="day-tab active" onclick="setDay(0)">Пятница 19</button>
+      <button class="day-tab" onclick="setDay(1)">Суббота 20</button>
+    </div>
+    <div class="stages-wrap" id="stages-wrap"></div>
+  </div>
+
+  <div class="now-bar">
+    <div class="now-dot"></div>
+    <span class="now-text">Сейчас</span>
+    <span class="now-artist" id="now-artist">—</span>
+  </div>
+
+  <!-- SCHEDULE VIEW -->
+  <div class="scroll-area" id="sched-view">
+    <div id="schedule"></div>
+  </div>
+
+  <!-- FAVORITES VIEW -->
+  <div class="scroll-area" id="fav-view" style="display:none">
+    <div id="fav-list"></div>
+  </div>
+
+  <nav class="bottom-nav">
+    <button class="nav-btn active" id="nav-sched" onclick="showView('schedule')">
+      <span class="nav-icon">◷</span>Расписание
+    </button>
+    <button class="nav-btn" id="nav-fav" onclick="showView('favorites')">
+      <span class="nav-icon">☆</span>Избранное
+    </button>
+  </nav>
+
+</div>
+</div>
+
+<script>
+// ── Telegram Web App init ──────────────────────────────────────────
+if(window.Telegram && window.Telegram.WebApp){
+  const tg = window.Telegram.WebApp;
+  tg.ready();
+  tg.expand();
+  tg.setHeaderColor('#06050f');
+  tg.setBackgroundColor('#06050f');
+}
+
+// ── Stars ──────────────────────────────────────────────────────────
+(function(){
+  const c=document.getElementById('stars');
+  for(let i=0;i<55;i++){
+    const s=document.createElement('div');
+    const sz=Math.random()<0.3?1.5:1;
+    s.className='star';
+    s.style.cssText=`width:${sz}px;height:${sz}px;top:${Math.random()*100}%;left:${Math.random()*100}%;--op:${0.3+Math.random()*0.5};--dur:${2+Math.random()*4}s;--del:${Math.random()*4}s`;
+    c.appendChild(s);
+  }
+})();
+
+// ── Data ──────────────────────────────────────────────────────────
+const STAGE_COLORS={
+  'MAIN AURA':'#c4b5fd',
+  'EFIR':'#fb923c',
+  'ZATMENIE':'#818cf8',
+  'LES':'#38bdf8'
+};
+
+const DATA={
+  0:{
+    'MAIN AURA':[
+      {time:'22:00',artist:'ISENTIE & ORCHESTRA',live:true},
+      {time:'23:30',artist:'ACROBAT'},
+      {time:'01:00',artist:'TURKER',live:true},
+      {time:'02:30',artist:'GLEB FILIPCHENKOW & NOEMY ABRANTES'},
+      {time:'04:30',artist:'SKIF'},
+      {time:'06:00',artist:'ENGVER'},
+    ],
+    'EFIR':[
+      {time:'23:00',artist:'SALINO & NEMO'},
+      {time:'00:30',artist:'IKSA'},
+      {time:'02:00',artist:'KUDZA'},
+      {time:'03:30',artist:'MONO K'},
+    ],
+    'ZATMENIE':[
+      {time:'22:00',artist:'Jean'},
+      {time:'00:00',artist:'Alina'},
+      {time:'02:00',artist:'Rewired'},
+      {time:'03:00',artist:'Semenets'},
+      {time:'04:00',artist:'Bigleh'},
+    ],
+    'LES':[
+      {time:'19:00',artist:'HACKme'},
+      {time:'20:00',artist:'Inyourmind'},
+      {time:'21:00',artist:'Dvizhmaan'},
+      {time:'22:00',artist:'Amritone',live:true},
+      {time:'23:00',artist:'DARA',live:true},
+      {time:'00:00',artist:'Dynamic Dreamers',live:true},
+      {time:'01:30',artist:'Igor Kachir',live:true},
+      {time:'03:00',artist:'Innaya'},
+      {time:'04:30',artist:'Pashupati'},
+      {time:'06:00',artist:'Law Do'},
+    ],
+  },
+  1:{
+    'MAIN AURA':[
+      {time:'19:00',artist:'ANÔRA'},
+      {time:'20:00',artist:'RUSHAN'},
+      {time:'21:00',artist:'BELOLUNA',live:true},
+      {time:'22:30',artist:'MONOPLAY',live:true},
+      {time:'00:00',artist:'Hard Rock Sofa'},
+      {time:'01:30',artist:'Alejandro Molinari'},
+      {time:'03:00',artist:'Garr1son & Dobrov'},
+      {time:'04:30',artist:'AGMA',live:true},
+      {time:'06:00',artist:'TBA'},
+    ],
+    'EFIR':[
+      {time:'22:30',artist:'KHARI'},
+      {time:'00:00',artist:'FUTURA'},
+      {time:'01:00',artist:'VIOLET NINJA',live:true},
+      {time:'02:00',artist:'ZUULA',live:true},
+      {time:'03:00',artist:'LEVCHENKOW'},
+      {time:'04:30',artist:'VOLAR SEDE'},
+      {time:'06:00',artist:'GIRICH'},
+    ],
+    'ZATMENIE':[
+      {time:'20:00',artist:'Kelten & JungleGypsy MC'},
+      {time:'22:00',artist:'Avatara'},
+      {time:'23:00',artist:'Sea Lambs'},
+      {time:'00:00',artist:'Jane K'},
+      {time:'01:00',artist:'Bassline Junkie'},
+      {time:'02:00',artist:'Sendah aka Smoky D'},
+      {time:'03:00',artist:'Sponsor'},
+      {time:'04:00',artist:'Max Fog'},
+      {time:'05:00',artist:'Qst'},
+    ],
+    'LES':[
+      {time:'19:00',artist:'Rudoman'},
+      {time:'20:30',artist:'Андрей Карнута — percussion'},
+      {time:'22:00',artist:'Ксения Мэл и проект Koan'},
+      {time:'00:00',artist:'HACKme'},
+      {time:'01:30',artist:'Inyourmind'},
+      {time:'03:00',artist:'Dvizhmaan'},
+      {time:'04:30',artist:'Pashupati'},
+      {time:'06:00',artist:'Law Do'},
+    ],
+  }
+};
+
+// ── State ──────────────────────────────────────────────────────────
+let currentDay=0, currentStage='MAIN AURA', currentView='schedule';
+let favorites=[];
+try{favorites=JSON.parse(localStorage.getItem('alkhimiya_favs')||'[]')}catch(e){}
+
+function saveFavs(){try{localStorage.setItem('alkhimiya_favs',JSON.stringify(favorites))}catch(e){}}
+
+// ── Time helpers ───────────────────────────────────────────────────
+function toMin(t){const[h,m]=t.split(':').map(Number);return(h<12?h+24:h)*60+m}
+function nowMin(){const n=new Date(),h=n.getHours(),m=n.getMinutes();return(h<12?h+24:h)*60+m}
+
+function slotStatus(slot,slots,idx){
+  const now=nowMin(),start=toMin(slot.time);
+  const next=idx<slots.length-1?toMin(slots[idx+1].time):start+90;
+  if(now>=start&&now<next)return'now';
+  if(now>=next)return'past';
+  return'future';
+}
+
+// ── Render helpers ─────────────────────────────────────────────────
+function makeCard(slot,idx,slots,dayIdx,stage){
+  const key=`d${dayIdx}_${stage}_${slot.artist}`;
+  const faved=favorites.includes(key);
+  const status=slotStatus(slot,slots,idx);
+  const isLast=idx===slots.length-1;
+  const color=STAGE_COLORS[stage]||'#c4b5fd';
+  const safeKey=key.replace(/'/g,"\\'");
+  return `<div class="slot-row">
+    <div class="time-col">
+      <div class="t-label">${slot.time}</div>
+      ${!isLast?'<div class="t-line"></div>':''}
+    </div>
+    <div class="slot-card${status==='now'?' is-now':''}${status==='past'?' past':''}" style="--stage-color:${color}">
+      <div class="slot-top">
+        <div class="artist-name">${slot.artist}</div>
+        <button class="fav-btn${faved?' faved':''}" onclick="toggleFav('${safeKey}')">${faved?'★':'☆'}</button>
+      </div>
+      <div class="slot-tags">
+        ${slot.live?'<span class="live-badge">Live</span>':''}
+        ${status==='now'?'<span class="now-badge">◯ Сейчас</span>':''}
+      </div>
+    </div>
+  </div>`;
+}
+
+// ── Controllers ────────────────────────────────────────────────────
+function setDay(d){
+  currentDay=d;
+  document.querySelectorAll('.day-tab').forEach((t,i)=>t.classList.toggle('active',i===d));
+  renderStages();
+  renderSchedule();
+  updateNowBar();
+}
+
+function setStage(s){
+  currentStage=s;
+  renderStages();
+  renderSchedule();
+  updateNowBar();
+  // scroll to top
+  document.getElementById('sched-view').scrollTop=0;
+}
+
+function toggleFav(key){
+  const i=favorites.indexOf(key);
+  if(i>=0)favorites.splice(i,1);
+  else favorites.push(key);
+  saveFavs();
+  if(currentView==='favorites')renderFavs();
+  else renderSchedule();
+  updateNowBar();
+  // Haptic feedback
+  if(window.Telegram&&window.Telegram.WebApp&&window.Telegram.WebApp.HapticFeedback){
+    window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+  }
+}
+
+function showView(v){
+  currentView=v;
+  document.getElementById('sched-view').style.display=v==='schedule'?'block':'none';
+  document.getElementById('fav-view').style.display=v==='favorites'?'block':'none';
+  document.getElementById('nav-sched').classList.toggle('active',v==='schedule');
+  document.getElementById('nav-fav').classList.toggle('active',v==='favorites');
+  if(v==='favorites')renderFavs();
+}
+
+// ── Renderers ──────────────────────────────────────────────────────
+function renderStages(){
+  const el=document.getElementById('stages-wrap');
+  el.innerHTML=Object.keys(DATA[0]).map(s=>{
+    const active=s===currentStage;
+    const col=STAGE_COLORS[s];
+    return`<button class="stage-pill${active?' active':''}"
+      style="${active?'background:'+col+';color:#06050f;':''}"
+      onclick="setStage('${s}')">${s}</button>`;
+  }).join('');
+}
+
+function renderSchedule(){
+  const slots=DATA[currentDay][currentStage]||[];
+  document.getElementById('schedule').innerHTML=
+    slots.map((s,i)=>makeCard(s,i,slots,currentDay,currentStage)).join('');
+}
+
+function renderFavs(){
+  const el=document.getElementById('fav-list');
+  if(!favorites.length){
+    el.innerHTML=`<div class="fav-empty"><span class="fav-empty-icon">☆</span>Добавь артистов в избранное,<br>нажав на звёздочку рядом с именем</div>`;
+    return;
+  }
+  let html='';
+  [0,1].forEach(day=>{
+    Object.keys(DATA[day]).forEach(stage=>{
+      const slots=DATA[day][stage];
+      slots.forEach((slot,idx)=>{
+        const key=`d${day}_${stage}_${slot.artist}`;
+        if(favorites.includes(key)){
+          html+=`<div class="fav-group-label">${day===0?'Пт 19':'Сб 20'} · ${stage}</div>`;
+          html+=makeCard(slot,idx,slots,day,stage);
+        }
+      });
+    });
+  });
+  el.innerHTML=html||`<div class="fav-empty"><span class="fav-empty-icon">☆</span>Добавь артистов в избранное</div>`;
+}
+
+function updateNowBar(){
+  const slots=DATA[currentDay][currentStage]||[];
+  let found=null;
+  slots.forEach((s,i)=>{if(slotStatus(s,slots,i)==='now')found=s;});
+  document.getElementById('now-artist').textContent=found?found.artist:'—';
+}
+
+// ── Init ───────────────────────────────────────────────────────────
+renderStages();
+renderSchedule();
+updateNowBar();
+setInterval(()=>{renderSchedule();updateNowBar();},60000);
+</script>
+</body>
+</html>
